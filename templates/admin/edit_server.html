@@ -1,0 +1,186 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block title %}
+编辑服务器 - 服务器密码管理系统
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div class="text-center flex-grow-1">
+            <h2 class="h3 mb-0 text-gray-800">更新服务器信息</h2>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                        <form id="editServerForm">
+                            <input type="hidden" id="serverId">
+                            <div class="mb-3">
+                                <label for="serverIp" class="form-label">服务器IP <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverIp" required>
+                                <div class="invalid-feedback">请输入服务器IP</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverOs" class="form-label">操作系统 <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverOs" required>
+                                <div class="invalid-feedback">请输入操作系统</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverKernel" class="form-label">内核 <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverKernel" required>
+                                <div class="invalid-feedback">请输入内核信息</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverGpu" class="form-label">显卡型号</label>
+                                <input type="text" class="form-control" id="serverGpu">
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverGpuMem" class="form-label">单卡显存</label>
+                                <input type="text" class="form-control" id="serverGpuMem">
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverRam" class="form-label">内存 <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverRam" required>
+                                <div class="invalid-feedback">请输入内存信息</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverCpu" class="form-label">CPU型号 <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverCpu" required>
+                                <div class="invalid-feedback">请输入CPU型号</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverCpuCores" class="form-label">CPU核数 <font color="red">*</font></label>
+                                <input type="text" class="form-control" id="serverCpuCores" required>
+                                <div class="invalid-feedback">请输入CPU核数</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="serverArch" class="form-label">系统架构 <font color="red">*</font></label>
+                                <select class="form-select" id="serverArch" required>
+                                    <option value="">请选择系统架构</option>
+                                    <option value="x86_64">x86_64</option>
+                                    <option value="aarch64">aarch64</option>
+                                </select>
+                                <div class="invalid-feedback">请选择系统架构</div>
+                            </div>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="button" class="btn btn-primary" id="updateServerBtn">
+                                    <i class="fas fa-save"></i> 更新
+                                </button>
+                                <a href="/server_admin" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> 返回
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 从URL获取服务器ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const serverId = urlParams.get('id');
+        
+        if (serverId) {
+            document.getElementById('serverId').value = serverId;
+            
+            // 加载服务器信息
+            fetch(`/api/servers/${serverId}`)
+                .then(response => response.json())
+                .then(server => {
+                    document.getElementById('serverIp').value = server.ip;
+                    document.getElementById('serverOs').value = server.os;
+                    document.getElementById('serverKernel').value = server.kernel;
+                    document.getElementById('serverGpu').value = server.gpu_model;
+                    document.getElementById('serverGpuMem').value = server.gpu_memory;
+                    document.getElementById('serverRam').value = server.ram;
+                    document.getElementById('serverCpu').value = server.cpu_model;
+                    document.getElementById('serverCpuCores').value = server.cpu_cores;
+                    document.getElementById('serverArch').value = server.architecture;
+                })
+                .catch(error => {
+                    console.error('获取服务器信息失败:', error);
+                    showAlert('获取服务器信息失败', 'danger');
+                });
+        }
+        
+        document.getElementById('updateServerBtn').addEventListener('click', function() {
+            // 表单验证逻辑
+            let isValid = true;
+            const inputs = document.querySelectorAll('input[required]');
+            
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!isValid) {
+                showAlert('请填写所有必填字段', 'warning');
+                return;
+            }
+
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 保存中...';
+            btn.disabled = true;
+            
+            const serverId = document.getElementById('serverId').value;
+            const formData = {
+                ip: document.getElementById('serverIp').value,
+                os: document.getElementById('serverOs').value,
+                kernel: document.getElementById('serverKernel').value,
+                gpu_model: document.getElementById('serverGpu').value.trim() || '无显卡',
+                gpu_memory: document.getElementById('serverGpuMem').value.trim() || '无显卡',
+                ram: document.getElementById('serverRam').value,
+                cpu_model: document.getElementById('serverCpu').value,
+                cpu_cores: document.getElementById('serverCpuCores').value,
+                architecture: document.getElementById('serverArch').value
+            };
+            
+            fetch(`/api/servers/${serverId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('更新服务器信息失败');
+                }
+            })
+            .then(data => {
+                showAlert('服务器信息已更新', 'success');
+            setTimeout(() => {
+                window.location.href = '/server_admin';
+            }, 1500);
+            })
+            .catch(error => {
+                console.error('更新服务器错误:', error);
+                showAlert('更新服务器失败，请检查输入信息', 'danger');
+            })
+            .finally(() => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            });
+        });
+
+        // 添加事件监听器以清除输入框的错误状态
+        const inputs = document.querySelectorAll('input[required]');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+            });
+        });
+    </script>
+{% endblock %}

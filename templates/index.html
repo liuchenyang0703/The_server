@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理系统</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2.5rem;
+            animation: fadeInDown 0.8s ease-out;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .header p {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #909399;
+            font-size: 14px;
+            border-top: 1px solid #ebeef5;
+            margin-top: 40px;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .card {
+            background-color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        /* 移除卡片悬浮效果 */
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: none;
+            padding: 1rem 1.25rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border-top: none;
+            padding: 1rem;
+        }
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.08);
+        }
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+            animation: fadeIn 0.6s ease-out 0.4s both;
+        }
+        @media (max-width: 576px) {
+            .search-box {
+                flex-direction: column;
+            }
+        }
+        .search-box .form-control {
+            flex: 1;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+        .search-box .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        .search-box .btn {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+            font-size: 1.1rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+        .query-section {
+            display: none;
+        }
+        .query-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .custom-toggle {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            font-weight: 500;
+            background-color: white;
+            color: #495057;
+        }
+        .custom-toggle:hover {
+            border-color: #3498db;
+            color: #3498db;
+        }
+        .custom-toggle.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: fadeIn 0.6s ease-out 0.2s both;
+        }
+        .query-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3498db;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 9998;
+        }
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .back-to-top:hover {
+            background-color: #2980b9;
+        }
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 3px solid rgba(52, 152, 219, 0.1);
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 响应式表格 */
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+            .header p {
+                font-size: 1rem;
+            }
+        }
+        /* 密码字段样式 */
+        .font-monospace {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 500;
+            color: #2c3e50;
+            background-color: rgba(248, 249, 250, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部 -->
+    <div class="header">
+        <div class="container text-center">
+            <h1>服务器管理系统</h1>
+            <p>安全、高效地集中管理服务器信息与密码</p>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0 text-center" id="queryTitle">服务器密码查询</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="toggle-container">
+                            <button class="custom-toggle" id="serverInfoToggle">服务器信息查询</button>
+                            <button class="custom-toggle active" id="serverPasswordToggle">服务器密码查询</button>
+                        </div>
+                        
+                        <div class="search-box">
+                            <input type="text" class="form-control" id="searchInput" placeholder="输入IP进行查询，支持模糊查询">
+                            <button class="btn btn-primary" id="searchBtn">查询</button>
+                        </div>
+                        
+                        <div class="query-section" id="serverInfoSection">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="serverQueryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>IP</th>
+                                            <th>操作系统</th>
+                                            <th>内核</th>
+                                            <th>显卡型号</th>
+                                            <th>单卡显存</th>
+                                            <th>内存</th>
+                                            <th>CPU型号</th>
+                                            <th>CPU核数</th>
+                                            <th>系统架构</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="serverQueryTableBody">
+                                        <!-- 查询结果将通过JavaScript动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="query-section active" id="serverPasswordSection">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="passwordQueryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>IP</th>
+                                            <th>端口</th>
+                                            <th>普通用户</th>
+                                            <th>普通用户密码</th>
+                                            <th>管理员root密码</th>
+                                            <th>备注</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="passwordQueryTableBody">
+                                        <!-- 查询结果将通过JavaScript动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 回到顶部按钮 -->
+    <div class="back-to-top" id="backToTop">
+        ↑
+    </div>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 切换查询类型
+        document.getElementById('serverInfoToggle').addEventListener('click', function() {
+            document.getElementById('serverInfoToggle').classList.add('active');
+            document.getElementById('serverPasswordToggle').classList.remove('active');
+            document.getElementById('serverInfoSection').classList.add('active');
+            document.getElementById('serverPasswordSection').classList.remove('active');
+            
+            // 清空输入框
+            document.getElementById('searchInput').value = '';
+            
+            // 更新查询标题
+            document.getElementById('queryTitle').textContent = '服务器信息查询';
+            
+            // 清空表格内容
+            document.getElementById('serverQueryTableBody').innerHTML = '';
+        });
+        
+        document.getElementById('serverPasswordToggle').addEventListener('click', function() {
+            document.getElementById('serverPasswordToggle').classList.add('active');
+            document.getElementById('serverInfoToggle').classList.remove('active');
+            document.getElementById('serverPasswordSection').classList.add('active');
+            document.getElementById('serverInfoSection').classList.remove('active');
+            
+            // 清空输入框
+            document.getElementById('searchInput').value = '';
+            
+            // 更新查询标题
+            document.getElementById('queryTitle').textContent = '服务器密码查询';
+            
+            // 清空表格内容
+            document.getElementById('passwordQueryTableBody').innerHTML = '';
+        });
+        
+        // 查询按钮点击事件
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) {
+                showAlert('请输入查询内容', 'warning');
+                return;
+            }
+            
+            // 根据选择的查询类型进行查询
+            if (document.getElementById('serverInfoToggle').classList.contains('active')) {
+                searchServers(searchTerm);
+            } else {
+                searchPasswords(searchTerm);
+            }
+        });
+        
+        // 回车触发查询
+        document.getElementById('searchInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById('searchBtn').click();
+            }
+        });
+        
+        // 查询服务器信息
+        function searchServers(searchTerm) {
+            const resultTableBody = document.getElementById('serverQueryTableBody');
+            resultTableBody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div></td></tr>';
+            
+            // 查询服务器信息（支持模糊查询）
+            fetch(`/api/servers/search/${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultTableBody.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(server => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="copyable-cell">${server.ip}</td>
+                                <td class="copyable-cell">${server.os}</td>
+                                <td class="copyable-cell">${server.kernel}</td>
+                                <td class="copyable-cell">${server.gpu_model}</td>
+                                <td class="copyable-cell">${server.gpu_memory}</td>
+                                <td class="copyable-cell">${server.ram}</td>
+                                <td class="copyable-cell">${server.cpu_model}</td>
+                                <td class="copyable-cell">${server.cpu_cores}</td>
+                                <td class="copyable-cell">${server.architecture}</td>
+                            `;
+                            resultTableBody.appendChild(row);
+                            
+                            // 为每个单元格添加点击事件
+                            const cells = row.querySelectorAll('.copyable-cell');
+                            cells.forEach(cell => {
+                                cell.addEventListener('click', copyCellContent);
+                            });
+                        });
+                    } else {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td colspan="9" class="text-center no-results">未找到匹配的服务器</td>
+                        `;
+                        resultTableBody.appendChild(row);
+                    }
+                })
+                .catch(error => {
+                    resultTableBody.innerHTML = '';
+                    console.error('查询服务器失败:', error);
+                    showAlert('查询服务器失败，请检查网络连接', 'danger');
+                });
+        }
+        
+        // 查询密码信息
+        function searchPasswords(searchTerm) {
+            const resultTableBody = document.getElementById('passwordQueryTableBody');
+            resultTableBody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr>';
+            
+            // 查询密码信息（支持模糊查询）
+            fetch(`/api/passwords/search/${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultTableBody.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(password => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="copyable-cell">${password.inner_ip}</td>
+                                <td class="copyable-cell">${password.port}</td>
+                                <td class="copyable-cell">${password.username}</td>
+                                <td class="copyable-cell font-monospace">${password.user_password}</td>
+                                <td class="copyable-cell font-monospace">${password.root_password}</td>
+                                <td class="copyable-cell">${password.outer_ip}</td>
+                            `;
+                            resultTableBody.appendChild(row);
+                            
+                            // 为每个单元格添加点击事件
+                            const cells = row.querySelectorAll('.copyable-cell');
+                            cells.forEach(cell => {
+                                cell.addEventListener('click', copyCellContent);
+                            });
+                        });
+                    } else {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td colspan="6" class="text-center no-results">未找到匹配的服务器</td>
+                        `;
+                        resultTableBody.appendChild(row);
+                    }
+                })
+                .catch(error => {
+                    resultTableBody.innerHTML = '';
+                    console.error('查询密码失败:', error);
+                    showAlert('查询密码失败，请检查网络连接', 'danger');
+                });
+        }
+
+        // 侧边栏切换
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleButton = document.getElementById('sidebarToggle');
+            
+            if (sidebar.getAttribute('data-state') === 'closed') {
+                sidebar.setAttribute('data-state', 'open');
+                toggleButton.setAttribute('data-state', 'open');
+            } else {
+                sidebar.setAttribute('data-state', 'closed');
+                toggleButton.setAttribute('data-state', 'closed');
+            }
+        });
+
+        // 全局提示组件
+        const globalAlertHtml = `
+            <div id="globalAlert" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; display: none;">
+                <div class="alert fade show" role="alert" style="min-width: 300px;">
+                    <span id="alertMessage"></span>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', globalAlertHtml);
+
+
+
+        // 回到顶部按钮功能
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
+        
+        backToTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 点击表格单元格复制内容功能
+        function copyCellContent(e) {
+            e.stopPropagation(); // 阻止事件冒泡
+            
+            const content = this.textContent.trim();
+            
+            // 优先使用现代剪贴板API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(content)
+                    .then(() => {
+                        showLocalAlert(this, '复制成功');
+                    })
+                    .catch(err => {
+                        console.error('剪贴板API失败:', err);
+                        // 降级使用传统方法
+                        fallbackCopyTextToClipboard(content, this);
+                    });
+            } else {
+                // 非安全上下文或不支持剪贴板API时使用传统方法
+                fallbackCopyTextToClipboard(content, this);
+            }
+        }
+
+        // 传统复制方法（备选方案）
+        function fallbackCopyTextToClipboard(text, element) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // 设置文本区域位置和大小，使其不可见但仍可选中
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showLocalAlert(element, '复制成功');
+                } else {
+                    throw new Error('复制命令执行失败');
+                }
+            } catch (err) {
+                console.error('传统复制方法失败:', err);
+                showLocalAlert(element, '复制失败，请手动复制', 'danger');
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 局部提示函数
+        function showLocalAlert(element, message, type = 'success', duration = 600) {
+            // 创建提示元素
+            const alertElement = document.createElement('div');
+            alertElement.className = `local-alert alert alert-${type} fade show`;
+            alertElement.textContent = message;
+            alertElement.style.cssText = `
+                position: absolute;
+                z-index: 9999;
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                border-radius: 4px;
+                margin-top: 5px;
+            `;
+            
+            // 获取元素位置
+            const rect = element.getBoundingClientRect();
+            alertElement.style.left = `${rect.left + window.scrollX}px`;
+            alertElement.style.top = `${rect.bottom + window.scrollY}px`;
+            
+            // 添加到页面
+            document.body.appendChild(alertElement);
+            
+            // 设置自动关闭
+            setTimeout(() => {
+                alertElement.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(alertElement);
+                }, 500); // 等待渐入动画结束
+            }, duration);
+        }
+
+        // 为可复制单元格添加样式
+        document.addEventListener('DOMContentLoaded', function() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .copyable-cell {
+                    cursor: pointer;
+                    position: relative;
+                    user-select: none;
+                }
+                .copyable-cell:hover {
+                    background-color: rgba(102, 126, 234, 0.15);
+                }
+                /* 确保表格单元格内容不会溢出 */
+                .table td {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 200px;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+
+        // 全局提示函数
+        function showAlert(message, type = 'success', duration = 3000) {
+            const alertElement = document.getElementById('globalAlert');
+            const messageElement = document.getElementById('alertMessage');
+            
+            // 设置消息内容
+            messageElement.textContent = message;
+            
+            // 设置提示类型样式
+            const alertDiv = alertElement.querySelector('.alert');
+            alertDiv.className = `alert alert-${type} fade show`;
+            
+            // 显示提示
+            alertElement.style.display = 'block';
+            alertDiv.classList.remove('show');
+            void alertDiv.offsetWidth; // 触发重绘
+            alertDiv.classList.add('show');
+            
+            // 设置自动关闭
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertElement.style.display = 'none';
+                }, 500); // 等待渐入动画结束
+            }, duration);
+        }
+    </script>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                服务器管理系统 | MIT 协议<br>
+                版权所有 &copy; 2025-present Liucy
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

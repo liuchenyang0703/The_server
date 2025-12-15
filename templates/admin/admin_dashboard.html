@@ -1,0 +1,129 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block title %}管理员控制台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center">
+        <h2 class="mb-4">欢迎，{{ session['username'] }}！</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0 text-center">管理功能</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="{{ url_for('server_admin') }}" class="btn btn-primary btn-lg d-block w-100 py-3">
+                            服务器信息管理
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('password_admin') }}" class="btn btn-primary btn-lg d-block w-100 py-3">
+                            服务器密码管理
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('change_password') }}" class="btn btn-success btn-lg d-block w-100 py-3">
+                            修改密码
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-lg d-block w-100 py-3">
+                            退出登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0 text-center">系统信息</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>角色：</strong>管理员</p>
+                <p><strong>功能说明：</strong></p>
+                <ul>
+                    <li>服务器信息管理：添加、编辑、删除服务器信息</li>
+                    <li>服务器密码管理：添加、编辑、删除服务器密码</li>
+                    <li>修改密码：更改当前管理员账号密码</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">快速操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center dashboard-card" style="border-color: var(--primary-color);">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">服务器管理</h6>
+                                <p class="card-text">管理所有服务器的硬件信息</p>
+                                <a href="{{ url_for('server_admin') }}" class="btn btn-primary btn-sm">进入管理</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center dashboard-card" style="border-color: var(--success-color);">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">密码管理</h6>
+                                <p class="card-text">管理所有服务器的登录密码</p>
+                                <a href="{{ url_for('password_admin') }}" class="btn btn-success btn-sm">进入管理</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center dashboard-card" style="border-color: var(--warning-color);">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">系统设置</h6>
+                                <p class="card-text">修改管理员密码和系统配置</p>
+                                <a href="{{ url_for('change_password') }}" class="btn btn-warning btn-sm">进入设置</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center dashboard-card" style="border-color: var(--danger-color);">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">安全退出</h6>
+                                <p class="card-text">退出当前管理员账号</p>
+                                <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 添加欢迎动画
+    document.addEventListener('DOMContentLoaded', function() {
+        const welcomeTitle = document.querySelector('h2');
+        welcomeTitle.style.opacity = '0';
+        welcomeTitle.style.transform = 'translateY(-20px)';
+        welcomeTitle.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            welcomeTitle.style.opacity = '1';
+            welcomeTitle.style.transform = 'translateY(0)';
+        }, 100);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block title %}删除确认 - 服务器密码管理系统{% endblock %}
+
+{% block content %}
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+        
+        <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="card-title">确认删除</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="deleteForm">
+                            <input type="hidden" id="itemId">
+                            <input type="hidden" id="itemType">
+                            <div class="alert alert-danger">
+                                <h4 class="alert-heading">警告!</h4>
+                                <p>您确定要删除这个项目吗？此操作不可撤销。</p>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                                    <i class="bi bi-trash me-1"></i>确认删除
+                                </button>
+                                <a href="" class="btn btn-secondary ms-2" id="cancelBtn">
+                                    <i class="bi bi-x me-1"></i>取消
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 从URL获取参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const itemId = urlParams.get('id');
+        const itemType = urlParams.get('type');
+        
+        // 设置表单隐藏字段
+        document.getElementById('itemId').value = itemId;
+        document.getElementById('itemType').value = itemType;
+        
+        // 设置取消按钮的href
+        const cancelBtn = document.getElementById('cancelBtn');
+        cancelBtn.href = itemType === 'server' ? '/server_admin' : '/password_admin';
+        
+        // 确认删除功能实现
+        async function confirmDelete() {
+            const deleteUrl = itemType === 'server' ? `/delete_server` : `/delete_password`;
+            
+            try {
+                const response = await fetch(deleteUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: itemId }) });
+                
+                if (response.ok) {
+                    // 删除成功，显示提示然后返回上一级页面
+                    showAlert('删除成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = itemType === 'server' ? '/server_admin' : '/password_admin';
+                    }, 1500);
+                } else {
+                    const errorData = await response.json();
+                    showAlert('删除失败: ' + (errorData.error || '未知错误'), 'danger');
+                }
+            } catch (error) {
+                console.error('删除过程中发生错误:', error);
+                showAlert('删除过程中发生错误，请重试', 'danger');
+            }
+        }
+        
+        // 确认删除按钮点击事件
+        document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+        
+        // 监听回车键触发删除
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmDelete();
+            }
+        });
+        
+        // 取消按钮点击事件
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            window.location.href = itemType === 'server' ? '/server_admin' : '/password_admin';
+        });
+    </script>
+{% endblock %}

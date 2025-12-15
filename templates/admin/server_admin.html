@@ -1,0 +1,149 @@
+{% extends 'admin/admin_layout.html' %}
+
+{% block title %}服务器信息后台管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom">
+                        <h5 class="card-title mb-0 text-center flex-grow-1">服务器信息后台管理</h5>
+                    <a href="/add_server" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>添加新服务器
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- 搜索框 -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="serverSearch" placeholder="按IP搜索服务器...">
+                            <button class="btn btn-primary" id="searchBtn">
+                                <i class="bi bi-search"></i>搜索
+                            </button>
+                            <button class="btn btn-secondary" id="resetBtn">
+                                <i class="bi bi-arrow-repeat"></i>重置
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle" id="serverTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <!-- <th>ID</th> -->
+                                    <th>服务器IP</th>
+                                    <th>操作系统</th>
+                                    <th>内核</th>
+                                    <th>显卡型号</th>
+                                    <th>单卡显存</th>
+                                    <th>内存</th>
+                                    <th>CPU型号</th>
+                                    <th>CPU核数</th>
+                                    <th>系统架构</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="serverTableBody">
+                                <!-- 服务器列表将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 页面加载完成后直接加载服务器列表
+    document.addEventListener('DOMContentLoaded', function() {
+        loadServerList();
+    });
+
+    // 获取服务器列表
+    function loadServerList(searchTerm = '') {
+        let url = '/api/servers';
+        
+        // 如果有搜索条件，使用搜索API
+        if (searchTerm) {
+            url = `/api/servers/search/${searchTerm}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('serverTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="11" class="text-center">${searchTerm ? '未找到匹配的服务器' : '暂无服务器信息'}</td>
+                    `;
+                    tbody.appendChild(row);
+                } else {
+                    data.forEach(server => {
+                        const row = document.createElement('tr');
+                        // 展示id需要放到ip上面 <td>${server.id}</td>
+                        row.innerHTML = `
+                            <td>${server.ip}</td>
+                            <td>${server.os}</td>
+                            <td>${server.kernel}</td>
+                            <td>${server.gpu_model}</td>
+                            <td>${server.gpu_memory}</td>
+                            <td>${server.ram}</td>
+                            <td>${server.cpu_model}</td>
+                            <td>${server.cpu_cores}</td>
+                            <td>${server.architecture}</td>
+                            <td class="text-center">
+                                    <div class="action-buttons">
+                                            <a href="/edit_server?id=${server.id}" class="btn btn-primary">
+                                                <i class="bi bi-pencil"></i>编辑
+                                            </a>
+                                            <a href="/delete?id=${server.id}&type=server" class="btn btn-danger">
+                                                <i class="bi bi-trash"></i>删除
+                                            </a>
+                                        </div>
+                                </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('获取服务器列表失败:', error);
+                showAlert('获取服务器列表失败，请检查网络连接', 'danger');
+            });
+    }
+    
+    // 搜索功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('serverSearch');
+        const searchBtn = document.getElementById('searchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // 搜索按钮点击事件
+        searchBtn.addEventListener('click', function() {
+            const searchTerm = searchInput.value.trim();
+            loadServerList(searchTerm);
+        });
+        
+        // 重置按钮点击事件
+        resetBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            loadServerList();
+        });
+        
+        // 回车键搜索
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const searchTerm = searchInput.value.trim();
+                loadServerList(searchTerm);
+            }
+        });
+    });
+</script>
+{% endblock %}

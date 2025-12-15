@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 - 服务器管理系统</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #409EFF;
+            --border-radius: 8px;
+            --shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background-image: url('https://imgapi.xl0408.top/index.php');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: slideUp 0.5s ease;
+        }
+        
+        .login-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .login-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .login-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #303133;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .form-control {
+            border: 1px solid #dcdfe6;
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            width: 100%;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 10px 20px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #66b1ff;
+            border-color: #66b1ff;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 576px) {
+            .login-container {
+                margin: 0 20px;
+            }
+            
+            .login-body {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h2>管理员登录</h2>
+        </div>
+        <div class="login-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label for="username" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="username" name="username" required placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">密码</label>
+                    <input type="password" class="form-control" id="password" name="password" required placeholder="请输入密码">
+                </div>
+                <button type="submit" class="btn btn-primary">登录</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 全局提示组件 -->
+    <div id="globalAlert" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; display: none;">
+        <div class="alert fade show m-0" role="alert" style="min-width: 300px;">
+            <span id="alertMessage"></span>
+        </div>
+    </div>
+    
+    <script>
+        // 全局提示函数
+        function showAlert(message, type = 'success', duration = 3000) {
+            const alertElement = document.getElementById('globalAlert');
+            const messageElement = document.getElementById('alertMessage');
+            
+            // 设置消息内容
+            messageElement.textContent = message;
+            
+            // 设置提示类型样式
+            const alertDiv = alertElement.querySelector('.alert');
+            alertDiv.className = `alert alert-${type} fade show m-0`;
+            
+            // 显示提示
+            alertElement.style.display = 'block';
+            alertDiv.classList.remove('show');
+            void alertDiv.offsetWidth; // 触发重绘
+            alertDiv.classList.add('show');
+            
+            // 设置自动关闭
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertElement.style.display = 'none';
+                }, 500); // 等待渐入动画结束
+            }, duration);
+        }
+        
+        // 自动处理flash消息
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取所有flash消息元素
+            const flashMessages = document.querySelectorAll('.alert.alert-dismissible');
+            
+            // 将flash消息转换为全局提示
+            flashMessages.forEach(flashEl => {
+                const message = flashEl.textContent.trim();
+                const type = flashEl.classList.contains('alert-success') ? 'success' :
+                             flashEl.classList.contains('alert-danger') ? 'danger' :
+                             flashEl.classList.contains('alert-warning') ? 'warning' :
+                             flashEl.classList.contains('alert-info') ? 'info' : 'success';
+                
+                // 显示全局提示
+                showAlert(message, type);
+                
+                // 移除原始flash消息元素
+                flashEl.remove();
+            });
+        });
+    </script>
+</body>
+</html>

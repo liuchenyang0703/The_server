@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - 服务器管理系统</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #409EFF;
+            --success-color: #67C23A;
+            --warning-color: #E6A23C;
+            --danger-color: #F56C6C;
+            --info-color: #909399;
+            --border-radius: 8px;
+            --shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+        }
+        
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #ebeef5;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header .navbar-brand {
+            color: var(--primary-color);
+            font-size: 22px;
+            font-weight: 600;
+            margin-right: 30px;
+        }
+        
+        .header .nav-link {
+            color: #606266;
+            font-size: 16px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .header .nav-link:hover {
+            color: var(--primary-color);
+        }
+        
+        .header .nav-link.active {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .main-content {
+            margin-top: 20px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* 页面标题样式优化 */
+        .page-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .page-header h1 {
+            margin-bottom: 0.25rem;
+            color: #212529;
+        }
+        
+        .page-header p {
+            margin-bottom: 0;
+            color: #6c757d;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* 仅仪表板使用的卡片悬停效果 */
+        .dashboard-card {
+            transition: all 0.3s ease;
+            height: 100%; /* 确保卡片高度一致 */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .dashboard-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            border-color: #dee2e6;
+        }
+        
+        /* 确保卡片内容垂直填充 */
+        .dashboard-card .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 确保按钮行填满可用空间 */
+        .dashboard-card .card-body .row {
+            flex: 1;
+        }
+        
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 1.25rem;
+        }
+        
+        /* 优化卡片标题和按钮的对齐 */
+        .card-header .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+        
+        /* 优化添加按钮样式 */
+        .card-header .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.875rem;
+        }
+        
+        .card-body {
+            background-color: #ffffff;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-primary:hover {
+            background-color: #66b1ff;
+            border-color: #66b1ff;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-secondary {
+            background-color: var(--info-color);
+            border-color: var(--info-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .table th {
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #ebeef5;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        .table-responsive {
+            margin: 0 auto;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        
+        .table {
+            margin: 0 auto;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px 15px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        /* 仅仪表板使用的表格行悬停效果 */
+        .dashboard-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        .dashboard-table tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #fafafa;
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd):hover {
+            background-color: #f0f7ff;
+        }
+        
+        .form-control {
+            border: 1px solid #dcdfe6;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+            padding: 8px 12px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+            outline: none;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .form-check {
+            margin-bottom: 1rem;
+        }
+        
+        .form-check-label {
+            font-weight: 400;
+            color: #6c757d;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #909399;
+            font-size: 14px;
+            border-top: 1px solid #ebeef5;
+            margin-top: 40px;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 操作按钮组 */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 仅仪表板使用的卡片悬停效果 */
+        .dashboard-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.075);
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 按钮过渡效果 */
+        .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 表单元素过渡效果 */
+        .form-control {
+            transition: all 0.2s ease;
+        }
+        
+        /* 页面淡入效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .container-fluid {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        /* 仅仪表板使用的表格悬停效果 */
+        .dashboard-table.table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+            transition: background-color 0.2s ease;
+        }
+        
+        /* 密码容器样式 */
+        .password-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .password-field {
+            padding-right: 30px;
+            width: 100%;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            padding: 0 8px;
+            color: #6c757d;
+        }
+        
+        .password-toggle:hover {
+            color: #495057;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 10px;
+            }
+            
+            .header .navbar-brand {
+                font-size: 16px;
+            }
+            
+            .main-content {
+                padding: 0 10px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-buttons .btn {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg header">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin">服务器管理系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    {% if session.get('role') == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/admin' %}active{% endif %}" href="/admin">仪表盘</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path in ['/server_admin', '/add_server', '/edit_server'] %}active{% endif %}" href="/server_admin">服务器管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path in ['/password_admin', '/add_password', '/edit_password'] %}active{% endif %}" href="/password_admin">密码管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/change_password' %}active{% endif %}" href="/change_password">修改密码</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.get('username') %}
+                    <li class="nav-item">
+                        <span class="nav-link">欢迎, {{ session['username'] }}</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="/logout">退出登录</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="container main-content">
+        <!-- 消息提示 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- 页面内容 -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                服务器管理系统 | MIT 协议<br>
+                版权所有 &copy; 2025-present Liucy
+            </p>
+        </div>
+    </footer>
+
+    <!-- 全局提示组件 -->
+    <div id="globalAlert" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; display: none;">
+        <div class="alert fade show m-0" role="alert" style="min-width: 300px;">
+            <span id="alertMessage"></span>
+        </div>
+    </div>
+
+    <!-- JavaScript功能 -->
+    <script>
+        // 全局提示函数
+        function showAlert(message, type = 'success', duration = 3000) {
+            const alertElement = document.getElementById('globalAlert');
+            const messageElement = document.getElementById('alertMessage');
+            
+            // 设置消息内容
+            messageElement.textContent = message;
+            
+            // 设置提示类型样式
+            const alertDiv = alertElement.querySelector('.alert');
+            alertDiv.className = `alert alert-${type} fade show m-0`;
+            
+            // 显示提示
+            alertElement.style.display = 'block';
+            alertDiv.classList.remove('show');
+            void alertDiv.offsetWidth; // 触发重绘
+            alertDiv.classList.add('show');
+            
+            // 设置自动关闭
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertElement.style.display = 'none';
+                }, 500); // 等待渐入动画结束
+            }, duration);
+        }
+        
+        // 自动处理flash消息
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取所有flash消息元素
+            const flashMessages = document.querySelectorAll('.alert.alert-dismissible');
+            
+            // 将flash消息转换为全局提示
+            flashMessages.forEach(flashEl => {
+                const message = flashEl.textContent.trim();
+                const type = flashEl.classList.contains('alert-success') ? 'success' :
+                             flashEl.classList.contains('alert-danger') ? 'danger' :
+                             flashEl.classList.contains('alert-warning') ? 'warning' :
+                             flashEl.classList.contains('alert-info') ? 'info' : 'success';
+                
+                // 显示全局提示
+                showAlert(message, type);
+                
+                // 移除原始flash消息元素
+                flashEl.remove();
+            });
+        });
+    </script>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
