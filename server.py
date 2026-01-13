@@ -458,7 +458,7 @@ def add_password_api():
             <p><strong>用户名:</strong> {data.get('username', '无')}</p>
             <p><strong>用户密码:</strong> {data.get('user_password', '无')}</p>
             <p><strong>root密码:</strong> {data['root_password']}</p>
-            <p><strong>外网IP:</strong> {data.get('outer_ip', '无')}</p>
+            <p><strong>备注:</strong> {data.get('outer_ip', '无')}</p>
         </div>
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
@@ -594,7 +594,7 @@ def update_password(password_id):
     if old_data['root_password'] != data['root_password']:
         update_content.append(f"root密码: {old_data['root_password']} → {data['root_password']}")
     if old_data['outer_ip'] != data.get('outer_ip', ''):
-        update_content.append(f"外网IP: {old_data['outer_ip'] or '无'} → {data.get('outer_ip', '无')}")
+        update_content.append(f"备注: {old_data['outer_ip'] or '无'} → {data.get('outer_ip', '无')}")
     
     # 发送邮件告警（在数据库操作完成后发送）
     subject = "【服务器管理】更新服务器密码信息"

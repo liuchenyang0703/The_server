@@ -9,7 +9,7 @@ SMTP_PORT = 25                  # SMTP服务器的端口号
 SMTP_USER = 'test@163.com'      # 发件人邮箱（用于登录）
 SMTP_PASSWORD = '122222222222'  # 发件人邮箱SMTP授权码
 SENDER = 'test@163.com'         # 发件人邮箱（用于发送）
-RECIPIENTS = ['shoujianren123@qq.com'] # 收件人邮箱列表，多个可使用“,”分割
+RECIPIENTS = ['shoujianren123@qq.com'] # 收件人邮箱列表，多个可使用“,”分割；例如：['test1@qq.com','test2@qq.com']
 
 def send_email(subject, content):
     """
