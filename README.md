@@ -2,13 +2,14 @@
 
 ## 项目介绍
 
-> 这是一个基于Flask框架开发的服务器管理系统，用于管理服务器信息和密码，提供管理员后台和用户查询功能。
+> 这是一个基于Flask框架开发的服务器管理系统，用于管理服务器信息和密码，提供管理员后台和用户查询功能，并集成了邮件通知告警功能。
 
 ## 项目结构
 
 ```
 .
 ├── check_admin.py          # 管理员用户检查与创建脚本
+├── email_config.py         # 邮件配置文件
 ├── README.md               # 项目说明文档
 ├── server.py               # 主应用程序文件
 ├── static/                 # 静态资源目录
@@ -31,6 +32,7 @@
 │   │   ├── admin_layout.html       # 管理员布局页面
 │   │   ├── change_password.html    # 密码修改页面    
 │   │   ├── delete_confirm.html     # 删除确认页面
+│   │   ├── edit_password.html      # 编辑密码页面
 │   │   ├── edit_server.html        # 编辑服务器页面
 │   │   ├── login.html              # 登录页面
 │   │   ├── password_admin.html     # 密码管理页面
@@ -58,12 +60,17 @@
 - 删除服务器密码
 - 查看服务器密码列表
 
-### 4. 服务器查询
-- 通过首页查询服务器信息
+### 4. 服务器信息、密码查询
+- 通过首页查询服务器信息及密码信息
 
 ### 5. 管理员后台
 - 管理员仪表盘
 - 密码修改功能
+
+### 6. 邮件通知告警
+- 服务器信息管理操作（增删改）邮件告警
+- 服务器密码管理操作（增删改）邮件告警
+- 异步邮件发送，不影响操作响应速度
 
 ## 技术栈
 
@@ -71,9 +78,10 @@
 - **后端框架**: Flask
 - **数据库**: MySQL (使用SQLAlchemy ORM)
 - **前端**: HTML, CSS, JavaScript, Bootstrap
-- **其他**: Flask-SQLAlchemy, pymysql
+- **其他**: Flask-SQLAlchemy, pymysql, smtplib
 
 ## 安装与运行
+> 请提前安装好python环境及pip环境
 
 ### 1. 安装依赖
 
@@ -89,7 +97,21 @@ pip install flask_sqlalchemy flask pymysql -i https://mirrors.aliyun.com/pypi/si
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://username:password@localhost/dbname'
 ```
 
-### 3. 初始化数据库
+### 3. 邮件配置
+
+在`email_config.py`中配置邮件发送信息：
+
+```python
+# 邮件配置
+SMTP_SERVER = 'smtp.163.com'    # SMTP服务器的地址
+SMTP_PORT = 25                  # SMTP服务器的端口号
+SMTP_USER = 'test@163.com'      # 发件人邮箱（用于登录）
+SMTP_PASSWORD = '122222222222'  # 发件人邮箱SMTP授权码
+SENDER = 'test@163.com'         # 发件人邮箱（用于发送）
+RECIPIENTS = ['shoujianren123@qq.com'] # 收件人邮箱列表，多个可使用“,”分割
+```
+
+### 4. 初始化数据库
 
 ```bash
 # 运行服务器，自动创建数据库表
@@ -102,7 +124,7 @@ python3 server.py
 mysql -u username -p dbname < the_server.sql
 ```
 
-### 4. 创建管理员用户
+### 5. 创建管理员用户
 
 运行以下脚本创建管理员用户：
 
@@ -114,7 +136,7 @@ python check_admin.py
 - 用户名: admin
 - 密码: admin123
 
-### 5. 启动应用
+### 6. 启动应用
 
 ```bash
 python server.py
@@ -131,11 +153,33 @@ python server.py
 python test_db.py
 ```
 
+## 邮件通知格式
+
+### 1. 新增服务器信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131005540.png)
+
+### 2. 更新服务器信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131007319.png)
+
+### 3. 删除服务器信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131007626.png)
+
+### 4. 新增服务器密码信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131008237.png)
+
+### 5. 更新服务器密码信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131008805.png)
+
+### 6. 删除服务器密码信息
+![](https://gcore.jsdelivr.net/gh/liuchenyang0703/blog-images@main/images/202601131009551.png)
+
 ## 注意事项
 
 1. 请确保在生产环境中修改默认管理员密码
 2. 建议使用HTTPS协议部署应用
 3. 定期备份数据库
+4. 确保邮件配置中的授权码正确，否则邮件通知可能失败
+5. 如遇邮件发送失败，请检查网络连接和邮件服务器配置
 
 ## 许可证
 

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash
+from email_config import send_email
 
 app = Flask(__name__)
 
@@ -232,6 +233,31 @@ def add_server_api():
     )
     db.session.add(new_server)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】新增服务器信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #4CAF50;">新增服务器信息</h3>
+            <p><strong>IP地址:</strong> {data['ip']}</p>
+            <p><strong>操作系统:</strong> {data['os']}</p>
+            <p><strong>内核版本:</strong> {data['kernel']}</p>
+            <p><strong>显卡型号:</strong> {data['gpu_model'] or '无显卡'}</p>
+            <p><strong>显卡内存:</strong> {data['gpu_memory'] or '无显卡'}</p>
+            <p><strong>内存:</strong> {data['ram']}</p>
+            <p><strong>CPU型号:</strong> {data['cpu_model']}</p>
+            <p><strong>CPU核心数:</strong> {data['cpu_cores']}</p>
+            <p><strong>架构:</strong> {data['architecture']}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '服务器已添加'}), 201
 
 # 获取特定服务器
@@ -258,6 +284,20 @@ def update_server(server_id):
     server = ServerInfo.query.get_or_404(server_id)
     data = request.get_json()
     
+    # 保存旧数据，用于邮件通知
+    old_data = {
+        'ip': server.ip,
+        'os': server.os,
+        'kernel': server.kernel,
+        'gpu_model': server.gpu_model,
+        'gpu_memory': server.gpu_memory,
+        'ram': server.ram,
+        'cpu_model': server.cpu_model,
+        'cpu_cores': server.cpu_cores,
+        'architecture': server.architecture
+    }
+    
+    # 更新数据
     server.ip = data['ip']
     server.os = data['os']
     server.kernel = data['kernel']
@@ -269,14 +309,82 @@ def update_server(server_id):
     server.architecture = data['architecture']
     
     db.session.commit()
+    
+    # 生成更新内容列表，只包含实际变更的字段
+    update_content = []
+    if old_data['ip'] != data['ip']:
+        update_content.append(f"IP：{old_data['ip']} → {data['ip']}")
+    if old_data['os'] != data['os']:
+        update_content.append(f"操作系统: {old_data['os']} → {data['os']}")
+    if old_data['kernel'] != data['kernel']:
+        update_content.append(f"内核版本: {old_data['kernel']} → {data['kernel']}")
+    if old_data['gpu_model'] != (data['gpu_model'] or '无显卡'):
+        update_content.append(f"显卡型号: {old_data['gpu_model']} → {data['gpu_model'] or '无显卡'}")
+    if old_data['gpu_memory'] != (data['gpu_memory'] or '无显卡'):
+        update_content.append(f"显卡内存: {old_data['gpu_memory']} → {data['gpu_memory'] or '无显卡'}")
+    if old_data['ram'] != data['ram']:
+        update_content.append(f"内存: {old_data['ram']} → {data['ram']}")
+    if old_data['cpu_model'] != data['cpu_model']:
+        update_content.append(f"CPU型号: {old_data['cpu_model']} → {data['cpu_model']}")
+    if old_data['cpu_cores'] != data['cpu_cores']:
+        update_content.append(f"CPU核心数: {old_data['cpu_cores']} → {data['cpu_cores']}")
+    if old_data['architecture'] != data['architecture']:
+        update_content.append(f"架构: {old_data['architecture']} → {data['architecture']}")
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】更新服务器信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #2196F3;">更新服务器信息</h3>
+            <p><strong>更新的IP地址:</strong> {old_data['ip']}</p>
+            <p><strong>更新内容:</strong></p>
+            <ul>
+    """
+    
+    # 添加实际更新的内容
+    for item in update_content:
+        content += f"                <li>{item}</li>\n"
+    
+    content += f"""
+            </ul>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '服务器信息已更新'})
 
 # 删除服务器
 @app.route('/api/servers/<int:server_id>', methods=['DELETE'])
 def delete_server(server_id):
     server = ServerInfo.query.get_or_404(server_id)
+    # 保存服务器IP，用于邮件通知
+    server_ip = server.ip
     db.session.delete(server)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】删除服务器信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #f44336;">删除服务器信息</h3>
+            <p><strong>删除的IP地址:</strong> {server_ip}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '服务器信息已删除'})
 
 # 获取密码列表
@@ -337,6 +445,28 @@ def add_password_api():
     )
     db.session.add(new_password)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】新增服务器密码信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #4CAF50;">新增服务器密码信息</h3>
+            <p><strong>IP地址:</strong> {data['inner_ip']}</p>
+            <p><strong>端口:</strong> {data['port']}</p>
+            <p><strong>用户名:</strong> {data.get('username', '无')}</p>
+            <p><strong>用户密码:</strong> {data.get('user_password', '无')}</p>
+            <p><strong>root密码:</strong> {data['root_password']}</p>
+            <p><strong>外网IP:</strong> {data.get('outer_ip', '无')}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '密码已添加', 'id': new_password.id}), 201
 
 # 验证管理员密码的函数
@@ -356,8 +486,27 @@ def delete_server_route():
     
     # 删除服务器
     server = ServerInfo.query.get_or_404(server_id)
+    # 保存服务器IP，用于邮件通知
+    server_ip = server.ip
     db.session.delete(server)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】删除服务器信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #f44336;">删除服务器信息</h3>
+            <p><strong>删除的IP地址:</strong> {server_ip}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '服务器信息已删除'})
 
 # 处理密码删除请求
@@ -368,8 +517,27 @@ def delete_password_route():
     
     # 删除密码
     password = ServerPassword.query.get_or_404(password_id)
+    # 保存密码信息，用于邮件通知
+    inner_ip = password.inner_ip
     db.session.delete(password)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】删除服务器密码信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #f44336;">删除服务器密码信息</h3>
+            <p><strong>删除的IP地址:</strong> {inner_ip}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '密码信息已删除'})
 
 # 获取特定密码
@@ -393,6 +561,17 @@ def update_password(password_id):
     password = ServerPassword.query.get_or_404(password_id)
     data = request.get_json()
     
+    # 保存旧数据，用于邮件通知
+    old_data = {
+        'inner_ip': password.inner_ip,
+        'port': password.port,
+        'username': password.username,
+        'user_password': password.user_password,
+        'root_password': password.root_password,
+        'outer_ip': password.outer_ip
+    }
+    
+    # 更新数据
     password.inner_ip = data['inner_ip']
     password.port = data['port']
     password.username = data.get('username', '')
@@ -401,14 +580,76 @@ def update_password(password_id):
     password.outer_ip = data.get('outer_ip', '')
     
     db.session.commit()
+    
+    # 生成更新内容列表，只包含实际变更的字段
+    update_content = []
+    if old_data['inner_ip'] != data['inner_ip']:
+        update_content.append(f"IP地址：{old_data['inner_ip']} → {data['inner_ip']}")
+    if old_data['port'] != data['port']:
+        update_content.append(f"端口: {old_data['port']} → {data['port']}")
+    if old_data['username'] != data.get('username', ''):
+        update_content.append(f"用户名: {old_data['username'] or '无'} → {data.get('username', '无')}")
+    if old_data['user_password'] != data.get('user_password', ''):
+        update_content.append(f"用户密码: {old_data['user_password'] or '无'} → {data.get('user_password', '无')}")
+    if old_data['root_password'] != data['root_password']:
+        update_content.append(f"root密码: {old_data['root_password']} → {data['root_password']}")
+    if old_data['outer_ip'] != data.get('outer_ip', ''):
+        update_content.append(f"外网IP: {old_data['outer_ip'] or '无'} → {data.get('outer_ip', '无')}")
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】更新服务器密码信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #2196F3;">更新服务器密码信息</h3>
+            <p><strong>更新的IP地址:</strong> {old_data['inner_ip']}</p>
+            <p><strong>更新内容:</strong></p>
+            <ul>
+    """
+    
+    # 添加实际更新的内容
+    for item in update_content:
+        content += f"                <li>{item}</li>\n"
+    
+    content += f"""
+            </ul>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '密码信息已更新'})
 
 # 删除密码
 @app.route('/api/passwords/<int:password_id>', methods=['DELETE'])
 def delete_password(password_id):
     password = ServerPassword.query.get_or_404(password_id)
+    # 保存密码信息，用于邮件通知
+    inner_ip = password.inner_ip
     db.session.delete(password)
     db.session.commit()
+    
+    # 发送邮件告警（在数据库操作完成后发送）
+    subject = "【服务器管理】删除服务器密码信息"
+    content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">服务器管理系统告警</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #f44336;">删除服务器密码信息</h3>
+            <p><strong>删除的IP地址:</strong> {inner_ip}</p>
+        </div>
+        <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
+    </div>
+    """
+    # 使用异步方式发送邮件，避免阻塞请求
+    import threading
+    threading.Thread(target=send_email, args=(subject, content)).start()
+    
     return jsonify({'message': '密码信息已删除'})
 
 # 404错误处理器
