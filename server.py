@@ -8,7 +8,7 @@ from wechat_config import send_wechat_notification
 app = Flask(__name__)
 
 # 通知开关，开启：True，关闭：False
-ENABLE_EMAIL_NOTIFICATION = False
+ENABLE_EMAIL_NOTIFICATION = True
 ENABLE_WECHAT_NOTIFICATION = True
 
 
