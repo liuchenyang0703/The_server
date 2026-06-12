@@ -1,9 +1,29 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash
+import threading
 from email_config import send_email
+from wechat_config import send_wechat_notification
 
 app = Flask(__name__)
+
+# 通知开关，开启：True，关闭：False
+ENABLE_EMAIL_NOTIFICATION = False
+ENABLE_WECHAT_NOTIFICATION = True
+
+
+def send_notifications_async(subject, content):
+    if not ENABLE_EMAIL_NOTIFICATION and not ENABLE_WECHAT_NOTIFICATION:
+        return
+
+    def send_notifications():
+        if ENABLE_EMAIL_NOTIFICATION:
+            send_email(subject, content)
+        if ENABLE_WECHAT_NOTIFICATION:
+            send_wechat_notification(subject, content)
+
+    threading.Thread(target=send_notifications, daemon=True).start()
+
 
 # 配置MySQL数据库
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123123@172.16.10.65:3306/The_server'
@@ -234,7 +254,7 @@ def add_server_api():
     db.session.add(new_server)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】新增服务器信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -254,9 +274,8 @@ def add_server_api():
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '服务器已添加'}), 201
 
@@ -331,7 +350,7 @@ def update_server(server_id):
     if old_data['architecture'] != data['architecture']:
         update_content.append(f"架构: {old_data['architecture']} → {data['architecture']}")
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】更新服务器信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -354,9 +373,8 @@ def update_server(server_id):
     </div>
     """
     
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '服务器信息已更新'})
 
@@ -369,7 +387,7 @@ def delete_server(server_id):
     db.session.delete(server)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】删除服务器信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -381,9 +399,8 @@ def delete_server(server_id):
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '服务器信息已删除'})
 
@@ -446,7 +463,7 @@ def add_password_api():
     db.session.add(new_password)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】新增服务器密码信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -463,9 +480,8 @@ def add_password_api():
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '密码已添加', 'id': new_password.id}), 201
 
@@ -491,7 +507,7 @@ def delete_server_route():
     db.session.delete(server)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】删除服务器信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -503,9 +519,8 @@ def delete_server_route():
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '服务器信息已删除'})
 
@@ -522,7 +537,7 @@ def delete_password_route():
     db.session.delete(password)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】删除服务器密码信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -534,9 +549,8 @@ def delete_password_route():
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '密码信息已删除'})
 
@@ -596,7 +610,7 @@ def update_password(password_id):
     if old_data['outer_ip'] != data.get('outer_ip', ''):
         update_content.append(f"备注: {old_data['outer_ip'] or '无'} → {data.get('outer_ip', '无')}")
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】更新服务器密码信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -619,9 +633,8 @@ def update_password(password_id):
     </div>
     """
     
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '密码信息已更新'})
 
@@ -634,7 +647,7 @@ def delete_password(password_id):
     db.session.delete(password)
     db.session.commit()
     
-    # 发送邮件告警（在数据库操作完成后发送）
+    # 发送通知告警（在数据库操作完成后发送）
     subject = "【服务器管理】删除服务器密码信息"
     content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -646,9 +659,8 @@ def delete_password(password_id):
         <p style="color: #666; font-size: 12px;">此邮件由Liucy自研服务器管理系统自动发送，请勿回复。</p>
     </div>
     """
-    # 使用异步方式发送邮件，避免阻塞请求
-    import threading
-    threading.Thread(target=send_email, args=(subject, content)).start()
+    # 使用异步方式发送通知，避免阻塞请求
+    send_notifications_async(subject, content)
     
     return jsonify({'message': '密码信息已删除'})
 
